@@ -5,6 +5,8 @@ import (
     "github.com/urfave/cli/v2"
     "log"
     "io"
+    "fmt"
+    "bufio"
 )
 
 
@@ -13,17 +15,16 @@ func main() {
         Name:  "go-cat-tool",
         Usage: "My version of the cat tool",
         Flags:[]cli.Flag{
-            &cli.StringFlag{
-            Name: "port",
-            Aliases: []string{"p"},
-            Usage: "Port number to check",
+            &cli.BoolFlag{
+            Name: "number",
+            Aliases: []string{"n"},
+            Usage: "Whether user wants lines numbered",
             Required: false,
         },
         },
         Action: func(cCtx *cli.Context) error {
 
-
-//                 fmt.Printf("Port %q \n", cCtx.String("port"))
+                lineCount := 1
 
                 for index, _ := range os.Args[1:] {
                     source := cCtx.Args().Get(index)
@@ -40,7 +41,22 @@ func main() {
                             panic(err.Error())
                         }
 
-                        io.Copy(os.Stdout, srcFile)
+                        if cCtx.Bool("number"){
+                        fileScanner := bufio.NewScanner(srcFile)
+
+                        fileScanner.Split(bufio.ScanLines)
+
+                        for fileScanner.Scan() {
+                        	fmt.Printf("%d. %s\n", lineCount, fileScanner.Text())
+                        	lineCount++
+                        }
+//                             fmt.Println("Print line by line \n")
+
+                        } else {
+                            io.Copy(os.Stdout, srcFile)
+
+                        }
+
                         defer srcFile.Close()
                     }
                 }
