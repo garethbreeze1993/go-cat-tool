@@ -18,13 +18,23 @@ func main() {
             &cli.BoolFlag{
             Name: "number",
             Aliases: []string{"n"},
-            Usage: "Whether user wants lines numbered",
+            Usage: "Whether user wants all lines numbered",
+            Required: false,
+        },
+            &cli.BoolFlag{
+            Name: "nonblank",
+            Aliases: []string{"b"},
+            Usage: "Whether user wants only non-blank lines numbered",
             Required: false,
         },
         },
         Action: func(cCtx *cli.Context) error {
 
                 lineCount := 1
+
+                if cCtx.Bool("number") && cCtx.Bool("nonblank") {
+                    panic("Cannot choose both number and nonblank flags choose either one or none at all")
+                }
 
                 for index, _ := range os.Args[1:] {
                     source := cCtx.Args().Get(index)
@@ -42,17 +52,29 @@ func main() {
                         }
 
                         if cCtx.Bool("number"){
-                        fileScanner := bufio.NewScanner(srcFile)
 
-                        fileScanner.Split(bufio.ScanLines)
+                            fileScanner := bufio.NewScanner(srcFile)
 
-                        for fileScanner.Scan() {
-                        	fmt.Printf("%d. %s\n", lineCount, fileScanner.Text())
-                        	lineCount++
-                        }
-//                             fmt.Println("Print line by line \n")
+                            fileScanner.Split(bufio.ScanLines)
 
-                        } else {
+                            for fileScanner.Scan() {
+                                fmt.Printf("%d. %s\n", lineCount, fileScanner.Text())
+                                lineCount++
+                            }
+
+                        } else if cCtx.Bool("nonblank"){
+
+                            fileScanner := bufio.NewScanner(srcFile)
+                            fileScanner.Split(bufio.ScanLines)
+                            for fileScanner.Scan() {
+                                if len(fileScanner.Text()) == 0 {
+                                    fmt.Printf("%s\n", fileScanner.Text())
+                                } else {
+	                            fmt.Printf("%d. %s\n", lineCount, fileScanner.Text())
+	                            lineCount++
+	                            }
+                            }
+                        }else {
                             io.Copy(os.Stdout, srcFile)
 
                         }
